@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { Company, Employee, RegistrationFormData } from '@/types/employee';
 import { DailySteps, GlobalSettings, StepSyncResult } from '@/types/steps';
+import { getTodayDateStringInTimezone } from './timezoneUtils';
 
 export const fetchCompanies = async (): Promise<Company[]> => {
   const { data, error } = await supabase
@@ -129,16 +130,19 @@ export const syncDailySteps = async (
 };
 
 export const fetchLast7DaysSteps = async (employeeId: string): Promise<DailySteps[]> => {
-  const today = new Date();
+  const todayDateString = getTodayDateStringInTimezone();
+  const today = new Date(todayDateString);
   const sevenDaysAgo = new Date(today);
   sevenDaysAgo.setDate(today.getDate() - 6);
+
+  const sevenDaysAgoString = sevenDaysAgo.toISOString().split('T')[0];
 
   const { data, error } = await supabase
     .from('daily_steps')
     .select('*')
     .eq('employee_id', employeeId)
-    .gte('step_date', sevenDaysAgo.toISOString().split('T')[0])
-    .lte('step_date', today.toISOString().split('T')[0])
+    .gte('step_date', sevenDaysAgoString)
+    .lte('step_date', todayDateString)
     .order('step_date', { ascending: true });
 
   if (error) {

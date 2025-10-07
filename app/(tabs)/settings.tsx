@@ -11,6 +11,7 @@ import { CircleCheck as CheckCircle } from 'lucide-react-native';
 import { getDeviceId } from '@/utils/deviceService';
 import { fetchEmployeeByDeviceId } from '@/utils/supabaseService';
 import { Employee } from '@/types/employee';
+import { formatDateWithZone } from '@/utils/timezoneUtils';
 
 export default function SettingsScreen() {
   const [employee, setEmployee] = useState<Employee | null>(null);
@@ -57,16 +58,7 @@ export default function SettingsScreen() {
   };
 
   const formatDate = (dateString: string | null): string => {
-    if (!dateString) return 'N/A';
-
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    return formatDateWithZone(dateString, { includeTime: true });
   };
 
   if (loading) {

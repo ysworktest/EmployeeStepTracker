@@ -29,6 +29,7 @@ import { registerBackgroundFetchAsync } from '@/utils/backgroundTasks';
 import { Employee } from '@/types/employee';
 import { GlobalSettings, DailySteps, StepData } from '@/types/steps';
 import { formatAbsoluteTime } from '@/utils/timeFormatter';
+import { formatDateShortWithZone, formatWeekday, getTodayDateStringInTimezone } from '@/utils/timezoneUtils';
 
 export default function IndividualScreen() {
   const [employee, setEmployee] = useState<Employee | null>(null);
@@ -153,7 +154,8 @@ export default function IndividualScreen() {
 
   const formatLast7Days = (history: DailySteps[], dailyGoal: number): StepData[] => {
     const result: StepData[] = [];
-    const today = new Date();
+    const todayDateString = getTodayDateStringInTimezone();
+    const today = new Date(todayDateString);
 
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
@@ -312,7 +314,7 @@ export default function IndividualScreen() {
                   />
                 </View>
                 <Text style={styles.chartLabel}>
-                  {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
+                  {formatWeekday(day.date)}
                 </Text>
               </View>
             );
@@ -347,7 +349,7 @@ export default function IndividualScreen() {
           </Text>
         )}
         <Text style={styles.infoText}>
-          Lifetime steps are calculated from your registration date: {new Date(employee.registrationDate || '').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          Lifetime steps are calculated from your registration date: {formatDateShortWithZone(employee.registrationDate)}
         </Text>
       </View>
     </ScrollView>
