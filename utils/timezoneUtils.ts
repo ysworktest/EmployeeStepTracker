@@ -6,9 +6,31 @@ export const getUserTimezone = (): string => {
   }
 };
 
+const TIMEZONE_ABBREVIATIONS: Record<string, string> = {
+  'Asia/Singapore': 'SGT',
+  'Asia/Hong_Kong': 'HKT',
+  'Asia/Tokyo': 'JST',
+  'Asia/Shanghai': 'CST',
+  'Asia/Kuala_Lumpur': 'MYT',
+  'Asia/Bangkok': 'ICT',
+  'Asia/Jakarta': 'WIB',
+  'Australia/Sydney': 'AEDT',
+  'America/New_York': 'EST',
+  'America/Chicago': 'CST',
+  'America/Denver': 'MST',
+  'America/Los_Angeles': 'PST',
+  'Europe/London': 'GMT',
+  'Europe/Paris': 'CET',
+};
+
 export const getTimezoneAbbreviation = (date: Date = new Date()): string => {
   try {
     const timezone = getUserTimezone();
+
+    if (TIMEZONE_ABBREVIATIONS[timezone]) {
+      return TIMEZONE_ABBREVIATIONS[timezone];
+    }
+
     const formatter = new Intl.DateTimeFormat('en-US', {
       timeZone: timezone,
       timeZoneName: 'short',
@@ -16,8 +38,16 @@ export const getTimezoneAbbreviation = (date: Date = new Date()): string => {
 
     const parts = formatter.formatToParts(date);
     const timeZonePart = parts.find((part) => part.type === 'timeZoneName');
+    const abbreviation = timeZonePart?.value || '';
 
-    return timeZonePart?.value || 'UTC';
+    if (abbreviation && !abbreviation.startsWith('GMT')) {
+      return abbreviation;
+    }
+
+    const offsetMinutes = -date.getTimezoneOffset();
+    const offsetHours = Math.floor(Math.abs(offsetMinutes) / 60);
+    const sign = offsetMinutes >= 0 ? '+' : '-';
+    return `UTC${sign}${offsetHours}`;
   } catch (error) {
     return 'UTC';
   }
@@ -202,5 +232,52 @@ export const formatWeekday = (dateString: string): string => {
     });
   } catch (error) {
     return '';
+  }
+};
+
+export const getTimezoneOffset = (date: Date = new Date()): string => {
+  try {
+    const offsetMinutes = -date.getTimezoneOffset();
+    const offsetHours = Math.floor(Math.abs(offsetMinutes) / 60);
+    const offsetMins = Math.abs(offsetMinutes) % 60;
+    const sign = offsetMinutes >= 0 ? '+' : '-';
+
+    if (offsetMins === 0) {
+      return `UTC${sign}${offsetHours}`;
+    }
+    return `UTC${sign}${offsetHours}:${offsetMins.toString().padStart(2, '0')}`;
+  } catch (error) {
+    return 'UTC';
+  }
+};
+
+export const formatTimeWithOffset = (
+  timestamp: string | null | undefined,
+  options?: {
+    includeSeconds?: boolean;
+    use24Hour?: boolean;
+  }
+): string => {
+  const date = convertUTCToLocal(timestamp);
+
+  if (!date) {
+    return 'Not synced yet';
+  }
+
+  try {
+    const timezone = getUserTimezone();
+    const offset = getTimezoneOffset(date);
+
+    const timeString = date.toLocaleTimeString('en-US', {
+      timeZone: timezone,
+      hour: 'numeric',
+      minute: '2-digit',
+      second: options?.includeSeconds ? '2-digit' : undefined,
+      hour12: !options?.use24Hour,
+    });
+
+    return `${timeString} (${offset})`;
+  } catch (error) {
+    return 'Invalid time';
   }
 };
