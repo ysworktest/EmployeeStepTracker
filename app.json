@@ -44,9 +44,8 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "b46ce6ee-ac4b-4470-a1e1-58423f677731"
+        "projectId": "6cdcdeab-d33f-4e27-b627-3d256f671531"
       }
-    },
-    "owner": "ysworktest"
+    }
   }
 }
