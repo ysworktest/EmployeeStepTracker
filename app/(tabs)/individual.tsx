@@ -8,7 +8,7 @@ import {
   RefreshControl,
   Platform,
 } from 'react-native';
-import { TrendingUp, Target, Heart, CircleCheck as CheckCircle, CircleAlert as AlertCircle } from 'lucide-react-native';
+import { TrendingUp, Target, Heart, CircleCheck as CheckCircle, CircleAlert as AlertCircle, Star } from 'lucide-react-native';
 import { getDeviceId } from '@/utils/deviceService';
 import {
   fetchEmployeeByDeviceId,
@@ -276,6 +276,11 @@ export default function IndividualScreen() {
         <View style={styles.chart}>
           {last7Days.map((day, index) => (
             <View key={index} style={styles.chartBar}>
+              {day.goalAchieved && (
+                <View style={styles.starIcon}>
+                  <Star size={18} color="#FFD700" fill="#FFD700" />
+                </View>
+              )}
               <View style={styles.chartBarContainer}>
                 <View
                   style={[
@@ -287,11 +292,6 @@ export default function IndividualScreen() {
                   ]}
                 />
               </View>
-              {day.goalAchieved && (
-                <View style={styles.chartIcon}>
-                  <CheckCircle size={12} color="#34C759" />
-                </View>
-              )}
               <Text style={styles.chartLabel}>
                 {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
               </Text>
@@ -301,7 +301,7 @@ export default function IndividualScreen() {
         </View>
         <View style={styles.chartLegend}>
           <View style={styles.legendItem}>
-            <View style={[styles.legendColor, { backgroundColor: '#34C759' }]} />
+            <Star size={14} color="#FFD700" fill="#FFD700" />
             <Text style={styles.legendText}>Goal Achieved</Text>
           </View>
           <View style={styles.legendItem}>
@@ -505,13 +505,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    height: 200,
+    height: 220,
     marginBottom: 16,
   },
   chartBar: {
     flex: 1,
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
   chartBarContainer: {
     width: '80%',
@@ -525,8 +525,11 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: 4,
   },
-  chartIcon: {
-    marginTop: 4,
+  starIcon: {
+    marginBottom: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 22,
   },
   chartLabel: {
     fontSize: 10,
