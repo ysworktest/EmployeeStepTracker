@@ -28,6 +28,7 @@ import {
 import { registerBackgroundFetchAsync } from '@/utils/backgroundTasks';
 import { Employee } from '@/types/employee';
 import { GlobalSettings, DailySteps, StepData } from '@/types/steps';
+import { formatAbsoluteTime } from '@/utils/timeFormatter';
 
 export default function IndividualScreen() {
   const [employee, setEmployee] = useState<Employee | null>(null);
@@ -41,6 +42,7 @@ export default function IndividualScreen() {
   const [error, setError] = useState<string | null>(null);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [pedometerAvailable, setPedometerAvailable] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   useEffect(() => {
     initializeStepTracking();
@@ -121,7 +123,7 @@ export default function IndividualScreen() {
       const goalAchieved = steps >= settingsData.dailyStepGoal;
       const charityEarned = goalAchieved ? settingsData.charityAmountPerGoal : 0;
 
-      await syncDailySteps(
+      const syncResult = await syncDailySteps(
         employeeData.employeeId,
         deviceId,
         steps,
@@ -129,6 +131,10 @@ export default function IndividualScreen() {
         goalAchieved,
         charityEarned
       );
+
+      if (syncResult.success && syncResult.data) {
+        setLastUpdated(syncResult.data.last_updated);
+      }
 
       const history = await fetchLast7DaysSteps(employeeData.employeeId);
       const formattedHistory = formatLast7Days(history, settingsData.dailyStepGoal);
@@ -255,6 +261,12 @@ export default function IndividualScreen() {
             <Text style={styles.achievementText}>Goal Achieved!</Text>
           </View>
         )}
+
+        <View style={styles.timestampContainer}>
+          <Text style={styles.timestampText}>
+            Last updated: {formatAbsoluteTime(lastUpdated)}
+          </Text>
+        </View>
       </View>
 
       <View style={styles.statsGrid}>
@@ -461,6 +473,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#34C759',
+  },
+  timestampContainer: {
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  timestampText: {
+    fontSize: 12,
+    color: '#8e8e93',
+    textAlign: 'center',
   },
   statsGrid: {
     flexDirection: 'row',
