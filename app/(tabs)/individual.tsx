@@ -274,30 +274,37 @@ export default function IndividualScreen() {
       <View style={styles.chartCard}>
         <Text style={styles.chartTitle}>Last 7 Days Performance</Text>
         <View style={styles.chart}>
-          {last7Days.map((day, index) => (
-            <View key={index} style={styles.chartBar}>
-              {day.goalAchieved && (
+          {last7Days.map((day, index) => {
+            const maxSteps = Math.max(...last7Days.map(d => d.steps), settings.dailyStepGoal);
+            const barHeight = maxSteps > 0 ? (day.steps / maxSteps) * 100 : 0;
+
+            return (
+              <View key={index} style={styles.chartBar}>
                 <View style={styles.starIcon}>
-                  <Star size={18} color="#FFD700" fill="#FFD700" />
+                  {day.goalAchieved ? (
+                    <Star size={18} color="#FFD700" fill="#FFD700" />
+                  ) : (
+                    <Star size={18} color="#D3D3D3" fill="none" />
+                  )}
                 </View>
-              )}
-              <View style={styles.chartBarContainer}>
-                <View
-                  style={[
-                    styles.chartBarFill,
-                    {
-                      height: `${Math.min((day.steps / (settings.dailyStepGoal * 1.2)) * 100, 100)}%`,
-                      backgroundColor: day.goalAchieved ? '#34C759' : '#007AFF',
-                    },
-                  ]}
-                />
+                <Text style={styles.chartSteps}>{formatNumber(day.steps)}</Text>
+                <View style={styles.chartBarContainer}>
+                  <View
+                    style={[
+                      styles.chartBarFill,
+                      {
+                        height: `${Math.min(barHeight, 100)}%`,
+                        backgroundColor: '#007AFF',
+                      },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.chartLabel}>
+                  {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
+                </Text>
               </View>
-              <Text style={styles.chartLabel}>
-                {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
-              </Text>
-              <Text style={styles.chartSteps}>{(day.steps / 1000).toFixed(1)}k</Text>
-            </View>
-          ))}
+            );
+          })}
         </View>
         <View style={styles.chartLegend}>
           <View style={styles.legendItem}>
@@ -305,8 +312,8 @@ export default function IndividualScreen() {
             <Text style={styles.legendText}>Goal Achieved</Text>
           </View>
           <View style={styles.legendItem}>
-            <View style={[styles.legendColor, { backgroundColor: '#007AFF' }]} />
-            <Text style={styles.legendText}>In Progress</Text>
+            <Star size={14} color="#D3D3D3" fill="none" />
+            <Text style={styles.legendText}>Goal Not Met</Text>
           </View>
         </View>
       </View>
@@ -505,31 +512,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    height: 220,
+    height: 240,
     marginBottom: 16,
   },
   chartBar: {
     flex: 1,
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'flex-end',
   },
   chartBarContainer: {
     width: '80%',
-    height: 150,
+    height: 140,
     backgroundColor: '#f5f5f5',
     borderRadius: 4,
     justifyContent: 'flex-end',
     overflow: 'hidden',
+    marginTop: 8,
+    marginBottom: 8,
   },
   chartBarFill: {
     width: '100%',
     borderRadius: 4,
   },
   starIcon: {
-    marginBottom: 6,
     alignItems: 'center',
     justifyContent: 'center',
     height: 22,
+    marginBottom: 4,
   },
   chartLabel: {
     fontSize: 10,
@@ -537,14 +546,15 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   chartSteps: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
     color: '#1a1a1a',
+    marginBottom: 4,
   },
   chartLegend: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 20,
+    gap: 24,
     paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: '#e5e5ea',
@@ -553,11 +563,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-  },
-  legendColor: {
-    width: 16,
-    height: 16,
-    borderRadius: 4,
   },
   legendText: {
     fontSize: 12,
