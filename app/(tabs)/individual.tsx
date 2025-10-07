@@ -23,7 +23,6 @@ import {
   requestPedometerPermissions,
   getTodaySteps,
   subscribeToPedometerUpdates,
-  getTodayDateString,
 } from '@/utils/pedometerService';
 import { registerBackgroundFetchAsync } from '@/utils/backgroundTasks';
 import { Employee } from '@/types/employee';
@@ -128,7 +127,7 @@ export default function IndividualScreen() {
         employeeData.employeeId,
         deviceId,
         steps,
-        getTodayDateString(),
+        getTodayDateStringInTimezone(),
         goalAchieved,
         charityEarned
       );
