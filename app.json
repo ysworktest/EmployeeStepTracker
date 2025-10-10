@@ -12,6 +12,7 @@
       "supportsTablet": true
     },
     "android": {
+      "minSdkVersion": 26,
       "permissions": [
         "ACTIVITY_RECOGNITION",
         "android.permission.health.READ_STEPS"
