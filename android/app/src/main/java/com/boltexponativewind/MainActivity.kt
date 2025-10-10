@@ -1,4 +1,4 @@
-package com.helloworld
+package com.boltexponativewind
 
 import android.os.Build
 import android.os.Bundle
