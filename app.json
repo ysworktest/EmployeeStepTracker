@@ -17,8 +17,7 @@
     },
     "android": {
       "permissions": [
-        "ACTIVITY_RECOGNITION",
-        "android.permission.ACTIVITY_RECOGNITION"
+        "ACTIVITY_RECOGNITION"
       ],
       "package": "com.boltexponativewind",
       "adaptiveIcon": {
@@ -35,10 +34,12 @@
       "expo-router",
       "expo-font",
       "expo-web-browser",
-      "expo-sensors",
+      [
+        "expo-sensors",
         {
           "motionPermission": "Allow $(PRODUCT_NAME) to access your motion and fitness data."
         }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

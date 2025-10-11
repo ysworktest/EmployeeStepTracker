@@ -62,20 +62,28 @@ export default function IndividualScreen() {
 
   const initializeStepTracking = async () => {
     try {
+      console.log('[Individual] Starting step tracking initialization');
+
       const available = await checkPedometerAvailability();
+      console.log('[Individual] Pedometer available:', available);
       setPedometerAvailable(available);
 
       if (!available) {
-        setError('Pedometer not available on this device');
+        setError('Step counter sensor not available on this device. Your device may not have a built-in step counter.');
         setLoading(false);
         return;
       }
 
       const hasPermission = await requestPedometerPermissions();
+      console.log('[Individual] Permission granted:', hasPermission);
       setPermissionGranted(hasPermission);
 
       if (!hasPermission) {
-        setError('Pedometer permission denied. Please enable in device settings.');
+        if (Platform.OS === 'android') {
+          setError('Activity Recognition permission is required. Please enable it in your device settings to track steps.');
+        } else {
+          setError('Motion & Fitness permission denied. Please enable in device settings to track steps.');
+        }
         setLoading(false);
         return;
       }
@@ -83,9 +91,11 @@ export default function IndividualScreen() {
       await loadAllData();
 
       await registerBackgroundFetchAsync();
+
+      console.log('[Individual] Step tracking initialized successfully');
     } catch (err: any) {
-      setError(err.message || 'Failed to initialize step tracking');
-      console.error('Initialization error:', err);
+      console.error('[Individual] Initialization error:', err);
+      setError(err.message || 'Failed to initialize step tracking. Please restart the app.');
     } finally {
       setLoading(false);
     }
@@ -114,6 +124,7 @@ export default function IndividualScreen() {
       setSettings(settingsData);
 
       const steps = await getTodaySteps();
+      console.log('[Individual] Retrieved today steps:', steps);
       setTodaySteps(steps);
 
       const goalAchieved = steps >= settingsData.dailyStepGoal;
@@ -130,6 +141,9 @@ export default function IndividualScreen() {
 
       if (syncResult.success && syncResult.data) {
         setLastUpdated(syncResult.data.last_updated);
+        console.log('[Individual] Steps synced to database successfully');
+      } else {
+        console.warn('[Individual] Failed to sync steps:', syncResult.error);
       }
 
       const history = await fetchLast7DaysSteps(employeeData.employeeId);
@@ -331,9 +345,12 @@ export default function IndividualScreen() {
         <Text style={styles.infoTitle}>Step Tracking Info</Text>
         <Text style={styles.infoText}>
           {Platform.OS === 'android'
-            ? 'Steps are tracked using your device\'s built-in step counter sensor. Make sure you keep your phone with you to track your activity.'
+            ? 'Steps are tracked using your device\'s built-in step counter sensor. The counter resets at midnight each day. Make sure to keep your phone with you to track your activity accurately.'
             : 'Steps are tracked in real-time using Apple HealthKit. Pull down to manually refresh your data.'
           }
+        </Text>
+        <Text style={styles.infoText}>
+          Steps update automatically in real-time while the app is open. You can also pull down to manually refresh.
         </Text>
         <Text style={styles.infoText}>
           Lifetime steps are calculated from your registration date: {formatDateShortWithZone(employee.registrationDate)}
