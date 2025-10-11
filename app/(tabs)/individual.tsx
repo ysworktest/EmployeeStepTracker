@@ -75,11 +75,7 @@ export default function IndividualScreen() {
       setPermissionGranted(hasPermission);
 
       if (!hasPermission) {
-        if (Platform.OS === 'android') {
-          setError('Health Connect permission required. Please grant permission to read step data from Google Fit or Samsung Health.');
-        } else {
-          setError('Pedometer permission denied. Please enable in device settings.');
-        }
+        setError('Pedometer permission denied. Please enable in device settings.');
         setLoading(false);
         return;
       }
@@ -333,20 +329,12 @@ export default function IndividualScreen() {
 
       <View style={styles.infoCard}>
         <Text style={styles.infoTitle}>Step Tracking Info</Text>
-        {Platform.OS === 'android' ? (
-          <>
-            <Text style={styles.infoText}>
-              Android: Steps are synced from Google Fit or Samsung Health via Health Connect. Steps update every minute while the app is open.
-            </Text>
-            <Text style={styles.infoText}>
-              Make sure you have Google Fit or Samsung Health installed and tracking your steps.
-            </Text>
-          </>
-        ) : (
-          <Text style={styles.infoText}>
-            iOS: Steps are tracked in real-time using Apple HealthKit. Pull down to manually refresh your data.
-          </Text>
-        )}
+        <Text style={styles.infoText}>
+          {Platform.OS === 'android'
+            ? 'Steps are tracked using your device\'s built-in step counter sensor. Make sure you keep your phone with you to track your activity.'
+            : 'Steps are tracked in real-time using Apple HealthKit. Pull down to manually refresh your data.'
+          }
+        </Text>
         <Text style={styles.infoText}>
           Lifetime steps are calculated from your registration date: {formatDateShortWithZone(employee.registrationDate)}
         </Text>

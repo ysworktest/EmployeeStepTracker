@@ -16,10 +16,8 @@
       }
     },
     "android": {
-      "minSdkVersion": 26,
       "permissions": [
-        "ACTIVITY_RECOGNITION",
-        "android.permission.health.READ_STEPS"
+        "ACTIVITY_RECOGNITION"
       ],
       "package": "com.boltexponativewind",
       "adaptiveIcon": {
@@ -35,13 +33,7 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-web-browser",
-      [
-        "react-native-health-connect",
-        {
-          "isBackgroundDeliveryEnabled": false
-        }
-      ]
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
