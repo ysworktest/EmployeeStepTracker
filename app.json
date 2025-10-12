@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.boltexponativewind",
+      "bundleIdentifier": "com.yuanseah.employeesteptracker",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSHealthShareUsageDescription": "This app needs access to your step count data from Apple Health to track your daily activity and earn charity contributions for your company.",
