@@ -10,17 +10,27 @@ import {
   requestActivityRecognitionPermission,
   checkActivityRecognitionPermission,
 } from './permissionsService';
+import * as HealthKit from './healthKitService';
 
 export { getTodayDateString } from './stepStorageService';
+export { getLast7DaysSteps } from './healthKitService';
 
 let currentBaseline = 0;
 let baselineDate = '';
 
 export const checkPedometerAvailability = async (): Promise<boolean> => {
   try {
+    if (Platform.OS === 'ios') {
+      const available = HealthKit.isHealthKitAvailable();
+      if (!available) {
+        console.log('[iOS] HealthKit not available on this device');
+      }
+      return available;
+    }
+
     const isAvailable = await Pedometer.isAvailableAsync();
     if (!isAvailable) {
-      console.log('Pedometer not available on this device');
+      console.log('[Android] Pedometer not available on this device');
     }
     return isAvailable;
   } catch (error) {
@@ -31,6 +41,12 @@ export const checkPedometerAvailability = async (): Promise<boolean> => {
 
 export const requestPedometerPermissions = async (): Promise<boolean> => {
   try {
+    if (Platform.OS === 'ios') {
+      const initialized = await HealthKit.initializeHealthKit();
+      console.log('[iOS] HealthKit initialized:', initialized);
+      return initialized;
+    }
+
     return await requestActivityRecognitionPermission();
   } catch (error) {
     console.error('Error requesting pedometer permissions:', error);
@@ -79,6 +95,11 @@ const initializeBaseline = async (): Promise<void> => {
 
 export const getTodaySteps = async (): Promise<number> => {
   try {
+    if (Platform.OS === 'ios') {
+      const steps = await HealthKit.getTodaySteps();
+      return steps;
+    }
+
     const today = getTodayDateStringFromStorage();
 
     if (!baselineDate || needsBaselineReset(baselineDate)) {
@@ -108,6 +129,10 @@ export const getStepsForDateRange = async (
   endDate: Date
 ): Promise<number> => {
   try {
+    if (Platform.OS === 'ios') {
+      return await HealthKit.getStepsForDateRange(startDate, endDate);
+    }
+
     const result = await Pedometer.getStepCountAsync(startDate, endDate);
     return result?.steps || 0;
   } catch (error) {
@@ -120,6 +145,10 @@ export const subscribeToPedometerUpdates = (
   callback: (steps: number) => void
 ): (() => void) => {
   try {
+    if (Platform.OS === 'ios') {
+      return HealthKit.subscribeToStepUpdates(callback);
+    }
+
     let lastStepCount = 0;
 
     const initialize = async () => {
