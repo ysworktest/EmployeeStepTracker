@@ -73,7 +73,10 @@ export default function IndividualScreen() {
       setPedometerAvailable(available);
 
       if (!available) {
-        setError('Step counter sensor not available on this device. Your device may not have a built-in step counter.');
+        const errorMsg = Platform.OS === 'android'
+          ? 'Step counter sensor not available on this device. Your device may not have a built-in step counter sensor. Please check if your device supports step counting.'
+          : 'Step counter sensor not available on this device.';
+        setError(errorMsg);
         setLoading(false);
         return;
       }
@@ -84,9 +87,9 @@ export default function IndividualScreen() {
 
       if (!hasPermission) {
         if (Platform.OS === 'android') {
-          setError('Activity Recognition permission is required. Please enable it in your device settings to track steps.');
+          setError('Activity Recognition permission is required to track steps. Please go to Settings > Apps > [App Name] > Permissions and enable "Physical activity" permission.');
         } else {
-          setError('Motion & Fitness permission denied. Please enable in device settings to track steps.');
+          setError('Motion & Fitness permission is required to track steps. Please go to Settings > Privacy & Security > Motion & Fitness and enable access for this app.');
         }
         setLoading(false);
         return;
@@ -194,11 +197,6 @@ export default function IndividualScreen() {
   }, []);
 
   const handleSyncHistory = async () => {
-    if (Platform.OS !== 'ios') {
-      Alert.alert('iOS Only', 'Historical data sync is only available on iOS devices with HealthKit.');
-      return;
-    }
-
     if (!employee) {
       Alert.alert('Error', 'Employee data not loaded');
       return;
@@ -216,9 +214,10 @@ export default function IndividualScreen() {
 
       if (result.success) {
         await loadAllData();
+        const platformName = Platform.OS === 'ios' ? 'Apple Health' : 'device sensors';
         Alert.alert(
           'Success',
-          `Synced ${result.data?.length || 0} days of step data from Apple Health to the database.`,
+          `Synced ${result.data?.length || 0} days of step data from ${platformName} to the database.`,
           [{ text: 'OK' }]
         );
       } else {
@@ -393,23 +392,21 @@ export default function IndividualScreen() {
           }
         </Text>
         <Text style={styles.infoText}>
-          Steps update automatically in real-time while the app is open. You can also pull down to manually refresh.
+          Steps update automatically every few seconds while the app is open. You can also pull down to manually refresh.
         </Text>
         <Text style={styles.infoText}>
           Lifetime steps are calculated from your registration date: {formatDateShortWithZone(employee.registrationDate)}
         </Text>
 
-        {Platform.OS === 'ios' && (
-          <TouchableOpacity
-            style={styles.syncButton}
-            onPress={handleSyncHistory}
-            disabled={syncingHistory}>
-            <RefreshCw size={20} color="#fff" />
-            <Text style={styles.syncButtonText}>
-              {syncingHistory ? 'Syncing...' : 'Sync 7-Day History from Apple Health'}
-            </Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={styles.syncButton}
+          onPress={handleSyncHistory}
+          disabled={syncingHistory}>
+          <RefreshCw size={20} color="#fff" />
+          <Text style={styles.syncButtonText}>
+            {syncingHistory ? 'Syncing...' : `Sync 7-Day History from ${Platform.OS === 'ios' ? 'Apple Health' : 'Device'}`}
+          </Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );

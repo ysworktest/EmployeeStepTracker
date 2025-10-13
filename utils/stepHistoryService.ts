@@ -14,14 +14,7 @@ export const sync7DayHistoryToSupabase = async (
   deviceId: string
 ): Promise<{ success: boolean; data?: StepHistoryItem[]; error?: string }> => {
   try {
-    if (Platform.OS !== 'ios') {
-      return {
-        success: false,
-        error: '7-day history sync is only available on iOS',
-      };
-    }
-
-    console.log('[StepHistory] Starting 7-day history sync for employee:', employeeId);
+    console.log(`[StepHistory] Starting 7-day history sync for employee: ${employeeId} on ${Platform.OS}`);
 
     const settings = await fetchGlobalSettings();
     if (!settings) {
