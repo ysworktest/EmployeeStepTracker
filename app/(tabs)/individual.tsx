@@ -7,10 +7,8 @@ import {
   ScrollView,
   RefreshControl,
   Platform,
-  TouchableOpacity,
-  Alert,
 } from 'react-native';
-import { TrendingUp, Target, Heart, CircleCheck as CheckCircle, CircleAlert as AlertCircle, Star, RefreshCw } from 'lucide-react-native';
+import { TrendingUp, Target, Heart, CircleCheck as CheckCircle, CircleAlert as AlertCircle, Star } from 'lucide-react-native';
 import { getDeviceId } from '@/utils/deviceService';
 import {
   fetchEmployeeByDeviceId,
@@ -26,7 +24,6 @@ import {
   getTodaySteps,
   subscribeToPedometerUpdates,
 } from '@/utils/pedometerService';
-import { sync7DayHistoryToSupabase } from '@/utils/stepHistoryService';
 import { registerBackgroundFetchAsync } from '@/utils/backgroundTasks';
 import { Employee } from '@/types/employee';
 import { GlobalSettings, DailySteps, StepData } from '@/types/steps';
@@ -46,7 +43,6 @@ export default function IndividualScreen() {
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [pedometerAvailable, setPedometerAvailable] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-  const [syncingHistory, setSyncingHistory] = useState(false);
 
   useEffect(() => {
     initializeStepTracking();
@@ -73,10 +69,7 @@ export default function IndividualScreen() {
       setPedometerAvailable(available);
 
       if (!available) {
-        const errorMsg = Platform.OS === 'android'
-          ? 'Step counter sensor not available on this device. Your device may not have a built-in step counter sensor. Please check if your device supports step counting.'
-          : 'Step counter sensor not available on this device.';
-        setError(errorMsg);
+        setError('Step counter sensor not available on this device. Your device may not have a built-in step counter.');
         setLoading(false);
         return;
       }
@@ -87,9 +80,9 @@ export default function IndividualScreen() {
 
       if (!hasPermission) {
         if (Platform.OS === 'android') {
-          setError('Activity Recognition permission is required to track steps. Please go to Settings > Apps > [App Name] > Permissions and enable "Physical activity" permission.');
+          setError('Activity Recognition permission is required. Please enable it in your device settings to track steps.');
         } else {
-          setError('Motion & Fitness permission is required to track steps. Please go to Settings > Privacy & Security > Motion & Fitness and enable access for this app.');
+          setError('Motion & Fitness permission denied. Please enable in device settings to track steps.');
         }
         setLoading(false);
         return;
@@ -195,41 +188,6 @@ export default function IndividualScreen() {
     await loadAllData();
     setRefreshing(false);
   }, []);
-
-  const handleSyncHistory = async () => {
-    if (!employee) {
-      Alert.alert('Error', 'Employee data not loaded');
-      return;
-    }
-
-    try {
-      setSyncingHistory(true);
-
-      const deviceId = await getDeviceId();
-      if (!deviceId) {
-        Alert.alert('Error', 'Failed to get device ID');
-        return;
-      }
-      const result = await sync7DayHistoryToSupabase(employee.employeeId, deviceId);
-
-      if (result.success) {
-        await loadAllData();
-        const platformName = Platform.OS === 'ios' ? 'Apple Health' : 'device sensors';
-        Alert.alert(
-          'Success',
-          `Synced ${result.data?.length || 0} days of step data from ${platformName} to the database.`,
-          [{ text: 'OK' }]
-        );
-      } else {
-        Alert.alert('Sync Failed', result.error || 'Failed to sync historical data');
-      }
-    } catch (error: any) {
-      console.error('[Individual] History sync error:', error);
-      Alert.alert('Error', error.message || 'Failed to sync historical data');
-    } finally {
-      setSyncingHistory(false);
-    }
-  };
 
   const formatNumber = (num: number): string => {
     return num.toLocaleString('en-US');
@@ -388,25 +346,15 @@ export default function IndividualScreen() {
         <Text style={styles.infoText}>
           {Platform.OS === 'android'
             ? 'Steps are tracked using your device\'s built-in step counter sensor. The counter resets at midnight each day. Make sure to keep your phone with you to track your activity accurately.'
-            : 'Steps are tracked in real-time using Apple HealthKit. Data matches exactly what you see in Apple Health app.'
+            : 'Steps are tracked in real-time using Apple HealthKit. Pull down to manually refresh your data.'
           }
         </Text>
         <Text style={styles.infoText}>
-          Steps update automatically every few seconds while the app is open. You can also pull down to manually refresh.
+          Steps update automatically in real-time while the app is open. You can also pull down to manually refresh.
         </Text>
         <Text style={styles.infoText}>
           Lifetime steps are calculated from your registration date: {formatDateShortWithZone(employee.registrationDate)}
         </Text>
-
-        <TouchableOpacity
-          style={styles.syncButton}
-          onPress={handleSyncHistory}
-          disabled={syncingHistory}>
-          <RefreshCw size={20} color="#fff" />
-          <Text style={styles.syncButtonText}>
-            {syncingHistory ? 'Syncing...' : `Sync 7-Day History from ${Platform.OS === 'ios' ? 'Apple Health' : 'Device'}`}
-          </Text>
-        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -668,21 +616,5 @@ const styles = StyleSheet.create({
     color: '#666',
     lineHeight: 20,
     marginBottom: 8,
-  },
-  syncButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#007AFF',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    marginTop: 16,
-    gap: 10,
-  },
-  syncButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#fff',
   },
 });
