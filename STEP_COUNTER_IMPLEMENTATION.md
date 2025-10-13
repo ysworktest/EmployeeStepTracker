@@ -111,15 +111,30 @@ The implementation includes comprehensive logging:
 
 ### Common Issues
 
-**Steps show 0:**
+**Steps show 0 or not updating:**
 - Check if ACTIVITY_RECOGNITION permission is granted
 - Verify device has a step counter sensor (check console logs)
 - Ensure baseline was initialized properly
+- Check if the baseline value is corrupted (device reboot may reset sensor)
+- Look for "[Pedometer] Sensor reset detected" in logs
 
 **Steps are inconsistent:**
-- Device step counter may reset after reboot
+- Device step counter may reset after reboot (baseline will auto-reset)
 - Wait for baseline to stabilize after app start
 - Check if midnight rollover occurred
+- Verify polling interval is working (every 3 seconds)
+
+**Real-time updates not working:**
+- Ensure step subscription is active (check for initialization logs)
+- Verify Pedometer.watchStepCount is receiving events
+- Check if polling fallback is running every 3 seconds
+- Look for subscription cleanup in logs
+
+**Historical data not syncing:**
+- Verify device has historical step data available
+- Check network connectivity for Supabase sync
+- Look for sync errors in console logs
+- Ensure employee data is loaded correctly
 
 **Permission denied:**
 - User needs to manually enable in device settings
@@ -205,6 +220,58 @@ This implementation replaces the previous Health Connect integration:
 - ⚠️ Cannot access historical data from other apps
 - ⚠️ Cannot sync with Google Fit or Samsung Health
 - ⚠️ Device-specific step counting (phone must be carried)
+
+## Recent Fixes (October 2025)
+
+### Android Step Counter Issues Resolved
+
+**Problem:** Steps showing as zero and not updating on Android devices
+
+**Root Causes:**
+1. Baseline initialization not working properly on Android
+2. Real-time subscription failing to trigger updates
+3. Sensor reset detection not handling device reboots
+4. No historical data retrieval for Android
+
+**Solutions Implemented:**
+
+1. **Enhanced Baseline Management:**
+   - Added initialization guard to prevent concurrent baseline setup
+   - Implemented sensor reset detection when total steps < baseline
+   - Added comprehensive logging for debugging baseline issues
+   - Auto-reset baseline when device sensor resets
+
+2. **Improved Real-time Updates:**
+   - Added polling fallback (every 3 seconds) alongside sensor events
+   - Fixed subscription lifecycle management
+   - Implemented proper cleanup on unmount
+   - Added step change detection to prevent unnecessary updates
+
+3. **Historical Data Support:**
+   - Implemented `getLast7DaysSteps()` for Android using Pedometer API
+   - Removed iOS-only restriction from 7-day history sync
+   - Added date-range queries for each of the past 7 days
+   - Proper error handling for missing historical data
+
+4. **Better Error Messages:**
+   - Platform-specific permission instructions
+   - Clear guidance for troubleshooting step tracking issues
+   - Improved user feedback during sync operations
+
+### Testing Checklist
+
+After deploying these fixes, test the following:
+
+- [ ] Steps display correctly on app launch (not zero)
+- [ ] Steps update in real-time as you walk
+- [ ] Pull-to-refresh updates step count accurately
+- [ ] Baseline persists across app restarts
+- [ ] Baseline resets properly at midnight
+- [ ] Sensor reset detected after device reboot
+- [ ] 7-day history sync works on Android
+- [ ] Error messages are clear and actionable
+- [ ] Permissions are requested properly
+- [ ] Console logs show detailed debugging info
 
 ## Future Enhancements
 
