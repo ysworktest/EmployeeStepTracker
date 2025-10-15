@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -43,22 +43,90 @@ export default function IndividualScreen() {
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [pedometerAvailable, setPedometerAvailable] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const periodicSyncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     initializeStepTracking();
   }, []);
+
+  const syncStepsToDatabase = useCallback(async (steps: number) => {
+    if (!employee || !settings || isSyncing) return;
+
+    try {
+      setIsSyncing(true);
+      const deviceId = await getDeviceId();
+      if (!deviceId) return;
+
+      const goalAchieved = steps >= settings.dailyStepGoal;
+      const charityEarned = goalAchieved ? settings.charityAmountPerGoal : 0;
+
+      const syncResult = await syncDailySteps(
+        employee.employeeId,
+        deviceId,
+        steps,
+        getTodayDateStringInTimezone(),
+        goalAchieved,
+        charityEarned
+      );
+
+      if (syncResult.success && syncResult.data) {
+        setLastUpdated(syncResult.data.last_updated);
+      }
+    } catch (err) {
+      console.error('Error syncing steps to database:', err);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [employee, settings, isSyncing]);
+
+  const debouncedSyncSteps = useCallback((steps: number) => {
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+    }
+
+    syncTimeoutRef.current = setTimeout(() => {
+      syncStepsToDatabase(steps);
+    }, 30000);
+  }, [syncStepsToDatabase]);
 
   useEffect(() => {
     if (!permissionGranted || !pedometerAvailable) return;
 
     const unsubscribe = subscribeToPedometerUpdates((steps) => {
       setTodaySteps(steps);
+      debouncedSyncSteps(steps);
     });
 
     return () => {
       unsubscribe();
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+      }
     };
-  }, [permissionGranted, pedometerAvailable]);
+  }, [permissionGranted, pedometerAvailable, debouncedSyncSteps]);
+
+  useEffect(() => {
+    if (!employee || !settings || !permissionGranted || !pedometerAvailable) return;
+
+    periodicSyncIntervalRef.current = setInterval(async () => {
+      try {
+        const steps = await getTodaySteps();
+        setTodaySteps(steps);
+        await syncStepsToDatabase(steps);
+      } catch (err) {
+        console.error('Error in periodic sync:', err);
+      }
+    }, 300000);
+
+    return () => {
+      if (periodicSyncIntervalRef.current) {
+        clearInterval(periodicSyncIntervalRef.current);
+      }
+    };
+  }, [employee, settings, permissionGranted, pedometerAvailable, syncStepsToDatabase]);
 
   const initializeStepTracking = async () => {
     try {
