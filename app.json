@@ -10,16 +10,9 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yuanseah.employeesteptracker",
+      "bundleIdentifier": "com.boltexponativewind",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false,
-        "NSHealthShareUsageDescription": "This app needs access to your step count data from Apple Health to track your daily activity and earn charity contributions for your company.",
-        "NSHealthUpdateUsageDescription": "This app does not write data to Apple Health.",
-        "UIBackgroundModes": []
-      },
-      "entitlements": {
-        "com.apple.developer.healthkit": true,
-        "com.apple.developer.healthkit.access": []
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -40,13 +33,7 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-web-browser",
-      [
-        "expo-sensors",
-        {
-          "motionPermission": "Allow $(PRODUCT_NAME) to access your motion and fitness data."
-        }
-      ]
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
