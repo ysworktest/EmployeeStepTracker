@@ -1,4 +1,4 @@
-package com.helloworld
+package com.employeesteptracker
 
 import android.os.Build
 import android.os.Bundle
