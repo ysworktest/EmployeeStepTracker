@@ -47,7 +47,6 @@ export default function IndividualScreen() {
 
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const periodicSyncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const stepPollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     initializeStepTracking();
@@ -96,47 +95,17 @@ export default function IndividualScreen() {
   useEffect(() => {
     if (!permissionGranted || !pedometerAvailable) return;
 
-    if (Platform.OS === 'android') {
-      const pollSteps = async () => {
-        try {
-          const steps = await getTodaySteps();
-          setTodaySteps(steps);
-          debouncedSyncSteps(steps);
-        } catch (err) {
-          console.error('Error polling steps on Android:', err);
-        }
-      };
+    const unsubscribe = subscribeToPedometerUpdates((steps) => {
+      setTodaySteps(steps);
+      debouncedSyncSteps(steps);
+    });
 
-      pollSteps();
-
-      stepPollingIntervalRef.current = setInterval(pollSteps, 60000);
-
-      return () => {
-        if (stepPollingIntervalRef.current) {
-          clearInterval(stepPollingIntervalRef.current);
-        }
-        if (syncTimeoutRef.current) {
-          clearTimeout(syncTimeoutRef.current);
-        }
-      };
-    } else {
-      const unsubscribe = subscribeToPedometerUpdates(async (incrementalSteps) => {
-        try {
-          const totalSteps = await getTodaySteps();
-          setTodaySteps(totalSteps);
-          debouncedSyncSteps(totalSteps);
-        } catch (err) {
-          console.error('Error getting total steps:', err);
-        }
-      });
-
-      return () => {
-        unsubscribe();
-        if (syncTimeoutRef.current) {
-          clearTimeout(syncTimeoutRef.current);
-        }
-      };
-    }
+    return () => {
+      unsubscribe();
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+      }
+    };
   }, [permissionGranted, pedometerAvailable, debouncedSyncSteps]);
 
   useEffect(() => {
